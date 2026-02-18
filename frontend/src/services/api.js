@@ -1,0 +1,14 @@
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:8000/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export const contentApi = {
+  generate: (context) => api.post('/content/generate', { context }),
+};
+
+export default api;

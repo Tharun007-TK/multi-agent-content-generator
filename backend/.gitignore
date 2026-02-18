@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Environments
+.env
+.venv/
+venv/
+ENV/
+
+# Byte-compiled / packaging
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# DB / data
+*.db
+/data/
+
+# Logs
+logs/
+*.log
+
+# Test & coverage
+.pytest_cache/
+.coverage
+htmlcov/
