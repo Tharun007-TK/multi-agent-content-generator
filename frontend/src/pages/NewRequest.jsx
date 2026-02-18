@@ -1,6 +1,25 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { contentApi } from '../services/api';
-import { Bot, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { Send, Loader2, CheckCircle2, Zap, Shield, Copy, Linkedin, Mail, Phone, MessageSquare } from 'lucide-react';
+
+const SAMPLES = [
+  {
+    label: 'Outbound Sales',
+    text: 'Reach out to early-stage AI startup founders in London about our new developer analytics copilot. Goal is to book a 15-minute intro call next week. Tone should be direct and confident.',
+  },
+  {
+    label: 'Product Launch',
+    text: 'Announce the launch of our AI-powered content generation tool to our existing B2B SaaS customer base. Highlight the time-saving benefits and invite them to a live demo webinar.',
+  },
+  {
+    label: 'Follow-up Nudge',
+    text: 'Follow up with a prospect in fintech who attended our last webinar but has not booked a demo yet. Keep it warm, reference their industry pain points around compliance automation.',
+  },
+  {
+    label: 'Support Outreach',
+    text: 'Check in with a customer who submitted a support ticket 3 days ago about an integration issue. The issue is now resolved. Re-engage them and offer a success call.',
+  },
+];
 
 export default function NewRequest() {
   const [context, setContext] = useState('');
@@ -20,60 +39,154 @@ export default function NewRequest() {
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-slate-800 rounded-xl p-8 border border-slate-700 shadow-xl">
-        <h1 className="text-2xl font-bold mb-6 flex items-center gap-2 text-primary-400">
-          <Bot className="w-8 h-8" />
-          Multi-Agent Generation
-        </h1>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">
-              User Context / Intent
-            </label>
-            <textarea
-              className="w-full h-32 bg-slate-900 border border-slate-700 rounded-lg p-4 text-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-              placeholder="e.g. Help me reach out to tech startups in London about our new AI tool..."
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-            />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={loading || !context}
-            className="w-full bg-primary-600 hover:bg-primary-500 disabled:bg-slate-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
-          >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-            Generate Content
-          </button>
-        </form>
+  const STEPS = useMemo(
+    () => [
+      { num: 1, label: 'Classify Intent', done: loading || !!result },
+      { num: 2, label: 'ICP Match', done: !!result },
+      { num: 3, label: 'Channel Decision', done: !!result },
+      { num: 4, label: 'Generate Copy', done: !!result },
+    ],
+    [loading, result]
+  );
 
-        {result && (
-          <div className="mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center gap-2 text-green-400 font-medium">
-              <CheckCircle2 className="w-5 h-5" />
-              Generation Complete
-            </div>
-            
-            <div className="bg-slate-900 rounded-lg border border-slate-700 divide-y divide-slate-800">
-              <div className="p-4">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Headline</span>
-                <p className="mt-1 text-lg font-semibold text-slate-100">{result.headline}</p>
-              </div>
-              <div className="p-4">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Body</span>
-                <p className="mt-1 text-slate-300 whitespace-pre-wrap">{result.body}</p>
-              </div>
-              <div className="p-4">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">CTA</span>
-                <p className="mt-1 text-primary-400 font-medium">{result.cta}</p>
-              </div>
-            </div>
+  const CHANNEL_ICONS = {
+    LinkedIn: Linkedin,
+    Email: Mail,
+    Call: Phone,
+    SMS: MessageSquare,
+  };
+
+  return (
+    <div className="orchestration-grid">
+      {/* Left: Input Panel */}
+      <div className="input-panel">
+        {/* Stepper */}
+        <div className="stepper-card">
+          <div className="stepper">
+            {STEPS.map((step, i) => (
+              <React.Fragment key={step.num}>
+                <div className={`step ${step.done ? 'step-done' : ''} ${!step.done && i === 0 ? 'step-active' : ''}`}>
+                  <div className="step-circle">
+                    {step.done ? <CheckCircle2 className="w-4 h-4" /> : <span>{step.num}</span>}
+                  </div>
+                  <span className="step-label">{step.label}</span>
+                </div>
+                {i < STEPS.length - 1 && <div className={`step-connector ${step.done ? 'step-connector-done' : ''}`} />}
+              </React.Fragment>
+            ))}
           </div>
-        )}
+        </div>
+
+        {/* Form */}
+        <div className="form-card">
+          <div className="form-card-header">
+            <h2 className="form-card-title">Orchestration Panel</h2>
+            <p className="form-card-sub">Describe your audience and intent. The pipeline handles the rest.</p>
+          </div>
+          <form onSubmit={handleSubmit} className="form-body">
+            <div className="field">
+              <label className="field-label">User Context / Intent</label>
+              <div className="samples-bar">
+                {SAMPLES.map((s) => (
+                  <button
+                    key={s.label}
+                    type="button"
+                    className={`sample-chip ${context === s.text ? 'sample-chip-active' : ''}`}
+                    onClick={() => setContext(s.text)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                className="field-textarea"
+                placeholder="e.g. Reach out to AI startup founders in London about our analytics copilot and book intro calls for next week."
+                value={context}
+                onChange={(e) => setContext(e.target.value)}
+              />
+              <p className="field-hint">Pick a sample above or write your own context. Include audience, intent, urgency, and any preferred channel.</p>
+            </div>
+
+            <div className="form-meta">
+              <div className="meta-badge">
+                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                Keys stay client-side
+              </div>
+              <div className="meta-badge">
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                ~2–6s latency
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !context.trim()}
+              className="generate-btn"
+            >
+              {loading
+                ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating…</>
+                : <><Send className="w-5 h-5" /> Generate Content</>
+              }
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Right: Output Panel */}
+      <div className="output-panel">
+        <div className="output-card">
+          <div className="output-header">
+            <div className="output-header-left">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <span>Output Preview</span>
+            </div>
+            {result && (
+              <button
+                className="copy-btn"
+                onClick={() => navigator.clipboard.writeText(`${result.headline}\n\n${result.body}\n\n${result.cta}`)}
+              >
+                <Copy className="w-4 h-4" />
+                Copy
+              </button>
+            )}
+          </div>
+
+          {!result && (
+            <div className="output-empty">
+              <div className="output-empty-icon">✦</div>
+              <p className="output-empty-title">Waiting for input</p>
+              <p className="output-empty-sub">Fill in your context and click Generate. Output will appear here as a structured result.</p>
+            </div>
+          )}
+
+          {result && (
+            <div className="output-result">
+              {result.platform && (() => {
+                const ChanIcon = CHANNEL_ICONS[result.platform] || Radio;
+                return (
+                  <div className="channel-badge">
+                    <ChanIcon className="w-4 h-4" />
+                    {result.platform}
+                  </div>
+                );
+              })()}
+              <div className="result-section">
+                <span className="result-label">Headline</span>
+                <p className="result-headline">{result.headline}</p>
+              </div>
+              <div className="result-divider" />
+              <div className="result-section">
+                <span className="result-label">Body</span>
+                <p className="result-body-text">{result.body}</p>
+              </div>
+              <div className="result-divider" />
+              <div className="result-section">
+                <span className="result-label">Call to Action</span>
+                <p className="result-cta">{result.cta}</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

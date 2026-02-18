@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.schemas import ClassificationResponse, GenerateRequest, ContentResponse
 from app.services.classification_service import ClassificationService, get_classification_service
+from app.api.v1.generate import router as generate_router
+from app.database.session import init_db
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -13,6 +15,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount the full multi-agent pipeline at /api/v1/content
+app.include_router(generate_router, prefix="/api/v1/content", tags=["content"])
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
 
 @app.get("/")
 def health_check():
