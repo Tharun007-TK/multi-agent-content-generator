@@ -5,14 +5,34 @@
 @tailwind utilities;
 
 :root {
-  background-color: #0b1220;
-  color: #f8fafc;
+  --bg: #0b1220;
+  --bg-secondary: #0e1528;
+  --card: #0f172a;
+  --border: rgba(255, 255, 255, 0.08);
+  --muted: #94a3b8;
+  --text: #e2e8f0;
+  --accent: #22d3ee;
+  --accent-2: #6366f1;
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-theme='light'] {
+  --bg: #f8fafc;
+  --bg-secondary: #eef2ff;
+  --card: #ffffff;
+  --border: rgba(15, 23, 42, 0.08);
+  --muted: #475569;
+  --text: #0f172a;
+  --accent: #2563eb;
+  --accent-2: #6366f1;
+  --shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 body {
   margin: 0;
   font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #0b1220;
+  background-color: var(--bg);
+  color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

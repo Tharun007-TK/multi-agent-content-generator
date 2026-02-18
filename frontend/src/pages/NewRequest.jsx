@@ -1,6 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { contentApi } from '../services/api';
-import { Send, Loader2, CheckCircle2, Zap, Shield, Copy, Linkedin, Mail, Phone, MessageSquare } from 'lucide-react';
+import { useOrchestration } from '../context/OrchestrationContext';
+import {
+  Send,
+  Loader2,
+  CheckCircle2,
+  Zap,
+  Shield,
+  Copy,
+  Linkedin,
+  Mail,
+  Phone,
+  MessageSquare,
+  Radio,
+} from 'lucide-react';
 
 const SAMPLES = [
   {
@@ -22,15 +35,30 @@ const SAMPLES = [
 ];
 
 export default function NewRequest() {
-  const [context, setContext] = useState('');
+  const {
+    intent,
+    audience,
+    urgency,
+    channel,
+    context: contextValue,
+    result,
+    setField,
+    setResult,
+  } = useOrchestration();
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+
+  const payload = useMemo(
+    () => `Intent: ${intent}\nTarget Audience: ${audience}\nUrgency: ${urgency}\nPreferred Channel: ${channel}\nContext: ${contextValue}`,
+    [intent, audience, urgency, channel, contextValue]
+  );
+
+  const hasInput = intent.trim() || audience.trim() || contextValue.trim();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await contentApi.generate(context);
+      const response = await contentApi.generate(payload);
       setResult(response.data);
     } catch (error) {
       console.error(error);
@@ -56,11 +84,11 @@ export default function NewRequest() {
     SMS: MessageSquare,
   };
 
+  const copySection = (text) => navigator.clipboard.writeText(text);
+
   return (
     <div className="orchestration-grid">
-      {/* Left: Input Panel */}
       <div className="input-panel">
-        {/* Stepper */}
         <div className="stepper-card">
           <div className="stepper">
             {STEPS.map((step, i) => (
@@ -77,22 +105,61 @@ export default function NewRequest() {
           </div>
         </div>
 
-        {/* Form */}
         <div className="form-card">
           <div className="form-card-header">
-            <h2 className="form-card-title">Orchestration Panel</h2>
-            <p className="form-card-sub">Describe your audience and intent. The pipeline handles the rest.</p>
+            <h2 className="form-card-title">Content Orchestration</h2>
+            <p className="form-card-sub">Describe the campaign. The agents classify intent, map ICP, pick channels, and generate copy.</p>
           </div>
           <form onSubmit={handleSubmit} className="form-body">
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">Intent</label>
+                <input
+                  className="field-input"
+                  placeholder="Book intro calls for analytics copilot"
+                  value={intent}
+                  onChange={(e) => setField('intent', e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label className="field-label">Target Audience</label>
+                <input
+                  className="field-input"
+                  placeholder="AI startup founders in London"
+                  value={audience}
+                  onChange={(e) => setField('audience', e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label className="field-label">Urgency</label>
+                <select className="field-input" value={urgency} onChange={(e) => setField('urgency', e.target.value)}>
+                  <option>Low</option>
+                  <option>Normal</option>
+                  <option>High</option>
+                  <option>Critical</option>
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">Preferred Channel</label>
+                <select className="field-input" value={channel} onChange={(e) => setField('channel', e.target.value)}>
+                  <option>Auto</option>
+                  <option>LinkedIn</option>
+                  <option>Email</option>
+                  <option>SMS</option>
+                  <option>Call</option>
+                </select>
+              </div>
+            </div>
+
             <div className="field">
-              <label className="field-label">User Context / Intent</label>
+              <label className="field-label">Additional Context</label>
               <div className="samples-bar">
                 {SAMPLES.map((s) => (
                   <button
                     key={s.label}
                     type="button"
-                    className={`sample-chip ${context === s.text ? 'sample-chip-active' : ''}`}
-                    onClick={() => setContext(s.text)}
+                    className={`sample-chip ${contextValue === s.text ? 'sample-chip-active' : ''}`}
+                    onClick={() => setField('context', s.text)}
                   >
                     {s.label}
                   </button>
@@ -100,11 +167,11 @@ export default function NewRequest() {
               </div>
               <textarea
                 className="field-textarea"
-                placeholder="e.g. Reach out to AI startup founders in London about our analytics copilot and book intro calls for next week."
-                value={context}
-                onChange={(e) => setContext(e.target.value)}
+                placeholder="Add nuance, tone, or references the agents should use."
+                value={contextValue}
+                onChange={(e) => setField('context', e.target.value)}
               />
-              <p className="field-hint">Pick a sample above or write your own context. Include audience, intent, urgency, and any preferred channel.</p>
+              <p className="field-hint">Include persona, offer, timing, and any objections or constraints.</p>
             </div>
 
             <div className="form-meta">
@@ -120,7 +187,7 @@ export default function NewRequest() {
 
             <button
               type="submit"
-              disabled={loading || !context.trim()}
+              disabled={loading || !hasInput}
               className="generate-btn"
             >
               {loading
@@ -132,7 +199,6 @@ export default function NewRequest() {
         </div>
       </div>
 
-      {/* Right: Output Panel */}
       <div className="output-panel">
         <div className="output-card">
           <div className="output-header">
@@ -141,12 +207,9 @@ export default function NewRequest() {
               <span>Output Preview</span>
             </div>
             {result && (
-              <button
-                className="copy-btn"
-                onClick={() => navigator.clipboard.writeText(`${result.headline}\n\n${result.body}\n\n${result.cta}`)}
-              >
+              <button className="copy-btn" onClick={() => copySection(`${result.headline}\n\n${result.body}\n\n${result.cta}`)}>
                 <Copy className="w-4 h-4" />
-                Copy
+                Copy All
               </button>
             )}
           </div>
@@ -171,17 +234,35 @@ export default function NewRequest() {
                 );
               })()}
               <div className="result-section">
-                <span className="result-label">Headline</span>
+                <div className="result-header">
+                  <span className="result-label">Headline</span>
+                  <button className="copy-btn ghost" onClick={() => copySection(result.headline)}>
+                    <Copy className="w-3 h-3" />
+                    Copy
+                  </button>
+                </div>
                 <p className="result-headline">{result.headline}</p>
               </div>
               <div className="result-divider" />
               <div className="result-section">
-                <span className="result-label">Body</span>
+                <div className="result-header">
+                  <span className="result-label">Body</span>
+                  <button className="copy-btn ghost" onClick={() => copySection(result.body)}>
+                    <Copy className="w-3 h-3" />
+                    Copy
+                  </button>
+                </div>
                 <p className="result-body-text">{result.body}</p>
               </div>
               <div className="result-divider" />
               <div className="result-section">
-                <span className="result-label">Call to Action</span>
+                <div className="result-header">
+                  <span className="result-label">Call to Action</span>
+                  <button className="copy-btn ghost" onClick={() => copySection(result.cta)}>
+                    <Copy className="w-3 h-3" />
+                    Copy
+                  </button>
+                </div>
                 <p className="result-cta">{result.cta}</p>
               </div>
             </div>
