@@ -41,12 +41,24 @@ export default function ExportMenu({ result, onToast }) {
     </div>
   );
 
+  const handleLinkedInExport = () => {
+    const text = [
+      result.headline,
+      '',
+      result.body,
+      '',
+      result.cta,
+    ].join('\n');
+    const url = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+    onToast('success', 'LinkedIn share dialog opened in a new tab.');
+  };
+
   const handleExport = async () => {
     setBusy(true);
     try {
       if (active === 'linkedin') {
-        const r = await exportApi.toLinkedIn({ headline: result.headline, body: result.body, cta: result.cta });
-        onToast('success', r.data.message);
+        handleLinkedInExport();
       } else if (active === 'email') {
         const r = await exportApi.toEmail({
           subject: form.subject || result.headline,
@@ -88,7 +100,11 @@ export default function ExportMenu({ result, onToast }) {
             <button
               key={key}
               className="export-option"
-              onClick={() => { setOpen(false); setActive(key); }}
+              onClick={() => {
+                setOpen(false);
+                if (key === 'linkedin') { handleLinkedInExport(); }
+                else { setActive(key); }
+              }}
             >
               <Icon className="w-4 h-4" />
               {label}
@@ -97,18 +113,7 @@ export default function ExportMenu({ result, onToast }) {
         </div>
       )}
 
-      {/* LinkedIn: no extra fields needed */}
-      {active === 'linkedin' && (
-        <ExportModal
-          title="Export to LinkedIn"
-          onConfirm={handleExport}
-          onCancel={() => setActive(null)}
-          busy={busy}
-        >
-          <p className="field-hint">Will post the generated headline, body, and CTA via LinkedIn webhook.</p>
-          <pre className="export-preview">{result.headline}</pre>
-        </ExportModal>
-      )}
+      {/* LinkedIn: opens share dialog directly via handleLinkedInExport, no modal needed */}
 
       {/* Email */}
       {active === 'email' && (
