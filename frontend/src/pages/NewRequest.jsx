@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { contentApi } from '../services/api';
 import { useOrchestration } from '../context/OrchestrationContext';
+import ExportMenu from '../components/ExportMenu';
 import {
   Send,
   Loader2,
@@ -34,7 +35,7 @@ const SAMPLES = [
   },
 ];
 
-export default function NewRequest() {
+export default function NewRequest({ onToast }) {
   const {
     intent,
     audience,
@@ -207,10 +208,13 @@ export default function NewRequest() {
               <span>Output Preview</span>
             </div>
             {result && (
-              <button className="copy-btn" onClick={() => copySection(`${result.headline}\n\n${result.body}\n\n${result.cta}`)}>
-                <Copy className="w-4 h-4" />
-                Copy All
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button className="copy-btn" onClick={() => copySection(`${result.headline}\n\n${result.body}\n\n${result.cta}`)}>
+                  <Copy className="w-4 h-4" />
+                  Copy All
+                </button>
+                <ExportMenu result={result} onToast={onToast || (() => {})} />
+              </div>
             )}
           </div>
 

@@ -4,7 +4,14 @@ from app.core.config import settings
 from app.schemas import ClassificationResponse, GenerateRequest, ContentResponse
 from app.services.classification_service import ClassificationService, get_classification_service
 from app.api.v1.generate import router as generate_router
+from app.api.v1.export import router as export_router
+from app.api.v1.dashboard import router as dashboard_router
+from app.api.v1.settings import router as settings_router
 from app.database.session import init_db
+
+# Ensure new models are registered with SQLModel metadata before init_db()
+import app.database.models.campaigns  # noqa: F401
+import app.database.models.exports    # noqa: F401
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -18,6 +25,9 @@ app.add_middleware(
 
 # Mount the full multi-agent pipeline at /api/v1/content
 app.include_router(generate_router, prefix="/api/v1/content", tags=["content"])
+app.include_router(export_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
+app.include_router(settings_router, prefix="/api/v1")
 
 @app.on_event("startup")
 def on_startup():

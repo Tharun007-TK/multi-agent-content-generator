@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { NavLink, Routes, Route, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -18,6 +18,11 @@ import {
 } from 'lucide-react';
 import NewRequest from './pages/NewRequest';
 import Logo from './components/Logo';
+import DashboardStats from './components/DashboardStats';
+import PipelineHistory from './components/PipelineHistory';
+import ActivityTable from './components/ActivityTable';
+import SettingsForm from './components/SettingsForm';
+import Toast from './components/Toast';
 import { OrchestrationProvider } from './context/OrchestrationContext';
 import './App.css';
 
@@ -127,120 +132,37 @@ function Sidebar({ isOpen, onClose }) {
   );
 }
 
-function CardShell({ title, children }) {
-  return (
-    <div className="card">
-      <div className="card-header">
-        <h3>{title}</h3>
-      </div>
-      <div className="card-body">{children}</div>
-    </div>
-  );
-}
-
 function DashboardPage() {
-  return (
-    <div className="grid-3">
-      <CardShell title="Pipeline Health">
-        <div className="metrics">
-          <div>
-            <p className="metric-label">Avg latency</p>
-            <p className="metric-value">2.8s</p>
-          </div>
-          <div>
-            <p className="metric-label">Success rate</p>
-            <p className="metric-value">99.2%</p>
-          </div>
-          <div>
-            <p className="metric-label">Throughput</p>
-            <p className="metric-value">148/hr</p>
-          </div>
-        </div>
-      </CardShell>
-      <CardShell title="Active Models">
-        <div className="badge-list">
-          <div className="pill">LLM: nova-micro-v1</div>
-          <div className="pill">Embeddings: all-MiniLM-L6-v2</div>
-          <div className="pill">Channels: LinkedIn · Email · SMS</div>
-        </div>
-      </CardShell>
-      <CardShell title="Recent Activity">
-        <ul className="activity-list">
-          <li><span className="dot" /> Generated outreach for fintech ICP</li>
-          <li><span className="dot" /> Pipeline routed to LinkedIn + Email</li>
-          <li><span className="dot" /> CTA performance tracking updated</li>
-        </ul>
-      </CardShell>
-    </div>
-  );
+  return <DashboardStats />;
 }
 
 function PipelinesPage() {
-  return (
-    <CardShell title="Pipelines">
-      <p className="muted">Design stages and routing rules for intents, ICPs, and channels.</p>
-      <div className="pipeline-grid">
-        <div className="pipeline-tile">
-          <Gauge className="w-5 h-5" />
-          <div>
-            <p className="tile-title">Sales Outreach</p>
-            <p className="tile-sub">Intent → ICP match → Channel pick → Copy</p>
-          </div>
-        </div>
-        <div className="pipeline-tile">
-          <Gauge className="w-5 h-5" />
-          <div>
-            <p className="tile-title">Product Announcements</p>
-            <p className="tile-sub">Segments users, adjusts tone, picks CTA</p>
-          </div>
-        </div>
-      </div>
-    </CardShell>
-  );
+  return <PipelineHistory />;
 }
 
 function ActivityPage() {
-  return (
-    <CardShell title="Activity">
-      <p className="muted">Stream of recent generations and decisions.</p>
-      <ul className="activity-feed">
-        <li>
-          <span className="dot" />
-          <div>
-            <p className="tile-title">Outboundly generated a LinkedIn sequence</p>
-            <p className="tile-sub">Intent: follow-up · Latency: 3.1s</p>
-          </div>
-        </li>
-        <li>
-          <span className="dot" />
-          <div>
-            <p className="tile-title">Channel decision: Email + SMS</p>
-            <p className="tile-sub">Reason: urgency high, CTA booking</p>
-          </div>
-        </li>
-      </ul>
-    </CardShell>
-  );
+  return <ActivityTable />;
 }
 
-function SettingsPage() {
-  return (
-    <CardShell title="Settings">
-      <p className="muted">Manage API keys, routing preferences, and workspace members.</p>
-      <div className="badge-list">
-        <div className="pill">OpenRouter key</div>
-        <div className="pill">HF embeddings key</div>
-        <div className="pill">Webhook destinations</div>
-      </div>
-    </CardShell>
-  );
+function SettingsPage({ onToast }) {
+  return <SettingsForm onToast={onToast} />;
 }
 
 function AppShell() {
   const { theme, toggle } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [toasts, setToasts] = useState([]);
 
   const closeSidebar = () => setSidebarOpen(false);
+
+  const addToast = useCallback((type, message) => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, type, message }]);
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const hero = useMemo(() => ({
     title: 'Outboundly Workspace',
@@ -274,11 +196,13 @@ function AppShell() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/pipelines" element={<PipelinesPage />} />
             <Route path="/activity" element={<ActivityPage />} />
-            <Route path="/generate" element={<NewRequest />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/generate" element={<NewRequest onToast={addToast} />} />
+            <Route path="/settings" element={<SettingsPage onToast={addToast} />} />
           </Routes>
         </main>
       </div>
+
+      <Toast toasts={toasts} remove={removeToast} />
     </div>
   );
 }
