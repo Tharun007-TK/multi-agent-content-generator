@@ -16,11 +16,43 @@ class ICPMatcherAgent(BaseAgent):
         else:
             self.index = faiss.IndexFlatL2(self.dimension)
             
-        # Mock database for MVP demo
+        # Realistic ICP database for Demo
         self.icp_db = {
-            0: {"id": "icp_tech_startup", "name": "B2B Tech Startups", "score": 0.95},
-            1: {"id": "icp_enterprise_fintech", "name": "Enterprise Fintech", "score": 0.85},
-            2: {"id": "icp_retail_ecommerce", "name": "Retail E-commerce", "score": 0.70}
+            0: {
+                "id": "icp_b2b_saas", 
+                "name": "B2B SaaS Founders", 
+                "score": 0.95,
+                "industry": "SaaS",
+                "preferences": {"LinkedIn": 0.9, "Email": 0.7, "Call": 0.1, "SMS": 0.05}
+            },
+            1: {
+                "id": "icp_fintech_execs", 
+                "name": "Enterprise Fintech Executives", 
+                "score": 0.88,
+                "industry": "Fintech",
+                "preferences": {"Email": 0.9, "LinkedIn": 0.5, "Call": 0.3}
+            },
+            2: {
+                "id": "icp_healthtech_ops", 
+                "name": "HealthTech Operations Managers", 
+                "score": 0.82,
+                "industry": "HealthTech",
+                "preferences": {"Email": 0.8, "Call": 0.6, "LinkedIn": 0.2}
+            },
+            3: {
+                "id": "icp_ecommerce_marketing", 
+                "name": "E-com Marketing Directors", 
+                "score": 0.90,
+                "industry": "Retail",
+                "preferences": {"SMS": 0.8, "Email": 0.7, "LinkedIn": 0.6}
+            },
+            4: {
+                "id": "icp_edutech_heads", 
+                "name": "EduTech Innovation Leads", 
+                "score": 0.75,
+                "industry": "EduTech",
+                "preferences": {"LinkedIn": 0.8, "Email": 0.8, "Call": 0.1}
+            }
         }
 
     def run(self, classification: ClassificationOutput) -> Dict:

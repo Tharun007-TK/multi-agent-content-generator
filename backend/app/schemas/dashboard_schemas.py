@@ -51,3 +51,18 @@ class ActivityEntry(BaseModel):
 class ActivityResponse(BaseModel):
     entries: List[ActivityEntry]
     total: int
+
+# ── Call Queue ────────────────────────────────────────────────────────────────
+class CallQueueItem(BaseModel):
+    id: int
+    created_at: datetime
+    lead_name: str
+    phone: str
+    script: str
+    priority: int
+    status: str
+
+
+class CallQueueResponse(BaseModel):
+    calls: List[CallQueueItem]
+    total: int

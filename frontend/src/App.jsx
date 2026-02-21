@@ -15,8 +15,10 @@ import {
   Gauge,
   Menu,
   X,
+  Phone,
 } from 'lucide-react';
 import NewRequest from './pages/NewRequest';
+import CallQueue from './pages/CallQueue';
 import Logo from './components/Logo';
 import DashboardStats from './components/DashboardStats';
 import PipelineHistory from './components/PipelineHistory';
@@ -24,21 +26,19 @@ import ActivityTable from './components/ActivityTable';
 import SettingsForm from './components/SettingsForm';
 import Toast from './components/Toast';
 import { OrchestrationProvider } from './context/OrchestrationContext';
+import { useSettings } from './context/SettingsContext';
 import './App.css';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
   { icon: Layers, label: 'Pipelines', to: '/pipelines' },
+  { icon: Phone, label: 'Call Queue', to: '/call-queue' },
   { icon: Activity, label: 'Activity', to: '/activity' },
   { icon: Sparkles, label: 'Generate Content', to: '/generate' },
   { icon: Settings, label: 'Settings', to: '/settings' },
 ];
 
-const STACK = [
-  { icon: Cpu, label: 'LLM', value: 'OpenRouter', sub: 'amazon/nova-micro-v1' },
-  { icon: Database, label: 'Embeddings', value: 'all-MiniLM-L6-v2', sub: 'FAISS vector retrieval' },
-  { icon: Radio, label: 'Channels', value: 'LinkedIn · Email · SMS · Call', sub: 'Weighted decision engine' },
-];
+// Moved dynamic STACK into Sidebar
 
 const THEME_KEY = 'outboundly-theme';
 
@@ -55,6 +55,7 @@ function useTheme() {
 }
 
 function Header({ onToggleSidebar, theme, onToggleTheme }) {
+  const { settings } = useSettings();
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
   const current = parts[0] ? parts[0] : 'dashboard';
@@ -74,7 +75,7 @@ function Header({ onToggleSidebar, theme, onToggleTheme }) {
       <div className="topbar-right">
         <div className="status-badge">
           <span className="dot" />
-          Model: nova-micro-v1
+          Model: {settings.default_llm_model}
         </div>
         <button className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -85,6 +86,13 @@ function Header({ onToggleSidebar, theme, onToggleTheme }) {
 }
 
 function Sidebar({ isOpen, onClose }) {
+  const { settings } = useSettings();
+  const STACK = [
+    { icon: Cpu, label: 'LLM', value: 'OpenRouter', sub: settings.default_llm_model },
+    { icon: Database, label: 'Embeddings', value: 'all-MiniLM-L6-v2', sub: 'FAISS vector retrieval' },
+    { icon: Radio, label: 'Channels', value: 'LinkedIn · Email · SMS · Call', sub: 'Weighted decision engine' },
+  ];
+
   return (
     <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-header">
@@ -195,6 +203,7 @@ function AppShell() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/pipelines" element={<PipelinesPage />} />
+            <Route path="/call-queue" element={<CallQueue />} />
             <Route path="/activity" element={<ActivityPage />} />
             <Route path="/generate" element={<NewRequest onToast={addToast} />} />
             <Route path="/settings" element={<SettingsPage onToast={addToast} />} />

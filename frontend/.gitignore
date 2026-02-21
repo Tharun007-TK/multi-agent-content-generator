@@ -1,5 +1,14 @@
-node_modules
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.db
+node_modules/
+
+# Node
+package-lock.json
+
+# OS
 .DS_Store
-dist
-dist-ssr
-*.local
+Thumbs.db

@@ -50,20 +50,23 @@ async def export_to_linkedin(
     """
     try:
         webhook_url = settings.LINKEDIN_WEBHOOK_URL
-        payload_summary = f"[LinkedIn] {req.headline[:60]}"
+        
+        type_label = "Direct Message" if req.export_type == "message" else "Post"
+        target_label = f"To: {req.recipient_name}" if req.recipient_name else "To: Feed"
+        payload_summary = f"[LinkedIn {type_label}] {target_label} | {req.headline[:50]}"
 
         if webhook_url:
             # Future: POST to LinkedIn API or internal webhook router
-            logger.info("LinkedIn webhook target: %s | payload: %s", webhook_url, payload_summary)
+            logger.info("LinkedIn webhook (%s) target: %s | payload: %s", req.export_type, webhook_url, payload_summary)
         else:
-            logger.info("LinkedIn export (simulated — no webhook configured): %s", payload_summary)
+            logger.info("LinkedIn export (simulated — no webhook): %s", payload_summary)
 
         record = Export(
             user_id=user_id,
             campaign_id=req.campaign_id,
             channel="linkedin",
             status="success",
-            destination=webhook_url or "simulated",
+            destination=f"{req.export_type} via {webhook_url or 'simulated'}",
         )
         db.add(record)
         _write_audit(db, user_id, "export_linkedin", "linkedin", payload_summary)
@@ -73,7 +76,7 @@ async def export_to_linkedin(
         return LinkedInExportResponse(
             success=True,
             export_id=record.id,
-            message="LinkedIn post queued successfully.",
+            message=f"LinkedIn {type_label.lower()} queued successfully.",
         )
 
     except Exception as exc:

@@ -47,6 +47,7 @@ export default function NewRequest({ onToast }) {
     setResult,
   } = useOrchestration();
   const [loading, setLoading] = useState(false);
+  const [activeStep, setActiveStep] = useState(0); // 0: idle, 1-4: steps
 
   const payload = useMemo(
     () => `Intent: ${intent}\nTarget Audience: ${audience}\nUrgency: ${urgency}\nPreferred Channel: ${channel}\nContext: ${contextValue}`,
@@ -58,24 +59,40 @@ export default function NewRequest({ onToast }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setResult(null);
+    setActiveStep(1);
+
+    // Simulate agent progression
+    const timer = setInterval(() => {
+      setActiveStep((prev) => (prev < 4 ? prev + 1 : prev));
+    }, 1500);
+
     try {
       const response = await contentApi.generate(payload);
       setResult(response.data);
+      setActiveStep(5); // Complete all
     } catch (error) {
       console.error(error);
+      setActiveStep(0);
     } finally {
+      clearInterval(timer);
       setLoading(false);
     }
   };
 
   const STEPS = useMemo(
     () => [
-      { num: 1, label: 'Classify Intent', done: loading || !!result },
-      { num: 2, label: 'ICP Match', done: !!result },
-      { num: 3, label: 'Channel Decision', done: !!result },
-      { num: 4, label: 'Generate Copy', done: !!result },
-    ],
-    [loading, result]
+      { num: 1, label: 'Classify Intent' },
+      { num: 2, label: 'ICP Match' },
+      { num: 3, label: 'Channel Decision' },
+      { num: 4, label: 'Generate Copy' },
+    ].map(s => {
+      let status = 'waiting';
+      if (activeStep > s.num || (s.num === 4 && result)) status = 'done';
+      else if (activeStep === s.num) status = 'working';
+      return { ...s, status };
+    }),
+    [activeStep, result]
   );
 
   const CHANNEL_ICONS = {
@@ -85,7 +102,47 @@ export default function NewRequest({ onToast }) {
     SMS: MessageSquare,
   };
 
-  const copySection = (text) => navigator.clipboard.writeText(text);
+  const copySection = async (text) => {
+    if (!text) return;
+
+    // Primary method: navigator.clipboard
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (onToast) onToast('success', 'Copied to clipboard!');
+        return;
+      } catch (err) {
+        console.warn('Navigator clipboard failed, falling back...', err);
+      }
+    }
+
+    // Fallback method: textarea + execCommand
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+
+      // Ensure it's not visible but part of the DOM
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "0";
+      document.body.appendChild(textArea);
+
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        if (onToast) onToast('success', 'Copied to clipboard!');
+      } else {
+        throw new Error('execCommand copy unsuccessful');
+      }
+    } catch (err) {
+      console.error('Final fallback copy failed!', err);
+      if (onToast) onToast('error', 'Failed to copy to clipboard.');
+    }
+  };
 
   return (
     <div className="orchestration-grid">
@@ -94,13 +151,21 @@ export default function NewRequest({ onToast }) {
           <div className="stepper">
             {STEPS.map((step, i) => (
               <React.Fragment key={step.num}>
-                <div className={`step ${step.done ? 'step-done' : ''} ${!step.done && i === 0 ? 'step-active' : ''}`}>
+                <div className={`step step-${step.status}`}>
                   <div className="step-circle">
-                    {step.done ? <CheckCircle2 className="w-4 h-4" /> : <span>{step.num}</span>}
+                    {step.status === 'done' ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : step.status === 'working' ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <span>{step.num}</span>
+                    )}
                   </div>
                   <span className="step-label">{step.label}</span>
                 </div>
-                {i < STEPS.length - 1 && <div className={`step-connector ${step.done ? 'step-connector-done' : ''}`} />}
+                {i < STEPS.length - 1 && (
+                  <div className={`step-connector ${step.status === 'done' ? 'step-connector-done' : ''}`} />
+                )}
               </React.Fragment>
             ))}
           </div>
@@ -213,7 +278,7 @@ export default function NewRequest({ onToast }) {
                   <Copy className="w-4 h-4" />
                   Copy All
                 </button>
-                <ExportMenu result={result} onToast={onToast || (() => {})} />
+                <ExportMenu result={result} onToast={onToast || (() => { })} />
               </div>
             )}
           </div>

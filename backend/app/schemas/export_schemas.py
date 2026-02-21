@@ -7,6 +7,8 @@ class LinkedInExportRequest(BaseModel):
     headline: str
     body: str
     cta: str
+    recipient_name: Optional[str] = None
+    export_type: str = "post" # "post" or "message"
     campaign_id: Optional[int] = None
 
 

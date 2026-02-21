@@ -1,0 +1,17 @@
+.venv/
+venv/
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+.env
+sql_app.db
+.vscode/
+.idea/
+*.swp
+*.bak

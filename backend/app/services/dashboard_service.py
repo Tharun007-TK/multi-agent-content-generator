@@ -4,11 +4,12 @@ Aggregates data from campaigns and audit_logs for the Dashboard page.
 """
 from sqlmodel import Session, select, func
 from app.database.models.campaigns import Campaign
-from app.database.models.exports import Export
+from app.database.models.exports import Export, CallQueue
 from app.database.models.base import AuditLog
 from app.schemas.dashboard_schemas import (
     DashboardStats, ExportCountByChannel, RecentActivity,
     PipelineHistoryResponse, PipelineRun,
+    CallQueueResponse, CallQueueItem,
 )
 
 
@@ -61,3 +62,33 @@ def get_pipeline_history(db: Session, limit: int = 50) -> PipelineHistoryRespons
         for c in campaigns
     ]
     return PipelineHistoryResponse(runs=runs, total=len(runs))
+
+def get_call_queue(db: Session) -> CallQueueResponse:
+    calls = db.exec(
+        select(CallQueue).order_by(CallQueue.priority.asc(), CallQueue.created_at.desc())
+    ).all()
+
+    items = [
+        CallQueueItem(
+            id=c.id,
+            created_at=c.created_at,
+            lead_name=c.lead_name,
+            phone=c.phone,
+            script=c.script,
+            priority=c.priority,
+            status=c.status,
+        )
+        for c in calls
+    ]
+    return CallQueueResponse(calls=items, total=len(items))
+
+
+def update_call_status(db: Session, call_id: int, status: str):
+    call = db.get(CallQueue, call_id)
+    if not call:
+        return None
+    call.status = status
+    db.add(call)
+    db.commit()
+    db.refresh(call)
+    return call

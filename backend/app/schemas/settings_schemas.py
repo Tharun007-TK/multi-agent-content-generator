@@ -6,8 +6,8 @@ class SettingsRead(BaseModel):
     default_llm_model: str
     smtp_host: str
     smtp_port: int
-    smtp_username: str
-    linkedin_webhook_url: str
+    smtp_username: Optional[str]
+    linkedin_webhook_url: Optional[str]
     openrouter_api_key_set: bool
     huggingface_api_key_set: bool
 
@@ -21,3 +21,8 @@ class SettingsUpdate(BaseModel):
     linkedin_webhook_url: Optional[str] = None
     openrouter_api_key: Optional[str] = None
     huggingface_api_key: Optional[str] = None
+
+
+class SMTPTestResponse(BaseModel):
+    success: bool
+    message: str

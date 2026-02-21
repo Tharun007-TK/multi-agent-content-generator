@@ -10,8 +10,9 @@ from app.api.v1.settings import router as settings_router
 from app.database.session import init_db
 
 # Ensure new models are registered with SQLModel metadata before init_db()
-import app.database.models.campaigns  # noqa: F401
-import app.database.models.exports    # noqa: F401
+import app.database.models.base         # noqa: F401
+import app.database.models.campaigns    # noqa: F401
+import app.database.models.exports      # noqa: F401
 
 app = FastAPI(title=settings.PROJECT_NAME)
 

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from app.database.session import get_session
+from app.database.models.campaigns import Campaign
+from app.database.models.exports import CallQueue
 from app.agents.a1_classification import ClassificationAgent
 from app.agents.a2_icp_matcher import ICPMatcherAgent
 from app.agents.a3_platform_decision import PlatformDecisionAgent
@@ -35,18 +37,52 @@ def generate_content(request: GenerateRequest, db: Session = Depends(get_session
         # Step 4: Content Generation
         content = a4.run(classification, icp_match, platform)
         
-        # Step 5: Log to AuditLog table
+        # Step 5: Persist as a Campaign for History
+        campaign = Campaign(
+            user_id=1,  # Default for MVP
+            intent=classification.intent_summary,
+            audience="General",  # Audience could be parsed from context in future
+            urgency=classification.urgency,
+            channel=platform,
+            headline=content.headline,
+            body=content.body,
+            cta=content.cta,
+            platform=platform,
+            icp_id=icp_match.get('id', ""),
+            priority_score=icp_match.get('score', 0.0)
+        )
+        db.add(campaign)
+        db.commit()
+        db.refresh(campaign)
+        
+        # Step 5.1: If channel is 'call', add to CallQueue
+        if platform.lower() == "call":
+            call_entry = CallQueue(
+                user_id=1,
+                lead_name="John Doe",  # Placeholder, should ideally come from context
+                phone="+1-555-0199",   # Placeholder
+                script=content.body,
+                priority=5,
+                status="queued"
+            )
+            db.add(call_entry)
+            db.commit()
+        
+        # Step 6: Log to AuditLog table
         AuditLogger.log_generation(
             db=db,
-            user_id=1,  # Default for MVP
+            user_id=1,
             task_type=classification.task_type,
             input_text=request.context,
             output_text=content.body,
             channel=platform,
-            icp_id=icp_match['id'],
+            icp_id=icp_match.get('id', ""),
             priority_score=icp_match.get('score', 0.0)
         )
         
+        content.campaign_id = campaign.id
         return content
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

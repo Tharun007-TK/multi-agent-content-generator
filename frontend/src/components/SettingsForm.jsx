@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import { settingsApi } from '../services/api';
+import { useSettings } from '../context/SettingsContext';
 
 const LLM_MODELS = [
   'amazon/nova-micro-v1',
@@ -10,6 +11,7 @@ const LLM_MODELS = [
 ];
 
 export default function SettingsForm({ onToast }) {
+  const { updateSettings } = useSettings();
   const [form, setForm] = useState({
     default_llm_model: 'amazon/nova-micro-v1',
     smtp_host: '',
@@ -38,7 +40,7 @@ export default function SettingsForm({ onToast }) {
         }));
         setFlags({ openrouter_api_key_set: d.openrouter_api_key_set, huggingface_api_key_set: d.huggingface_api_key_set });
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -52,6 +54,7 @@ export default function SettingsForm({ onToast }) {
     Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) payload[k] = v; });
     try {
       await settingsApi.update(payload);
+      updateSettings(payload);
       onToast('success', 'Settings saved successfully.');
     } catch (err) {
       onToast('error', 'Failed to save settings.');

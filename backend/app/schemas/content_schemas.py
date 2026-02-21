@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -12,6 +13,7 @@ class ContentOutput(BaseModel):
     body: str
     cta: str
     platform: str
+    campaign_id: Optional[int] = None
 
 
 class ContentResponse(ContentOutput):
